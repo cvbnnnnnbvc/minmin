@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>敏敏终端</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: row;
+            transition: flex-direction 0.5s;
+        }
+
+        .black {
+            background-color: black;
+            color: white;
+            flex: 1;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .white {
+            background-color: white;
+            flex: 1;
+            padding: 10px;
+            overflow: auto;
+        }
+
+        textarea {
+            flex: 1;
+            resize: none;
+            margin-bottom: 10px;
+            background-color: #121212;
+            color: rgb(0, 255, 106);
+            border: none; 
+            padding: 10px;
+            outline: none; 
+        }
+
+        button {
+            padding: 10px;
+            background-color: #555;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #777;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="black">
+        <textarea id="jsInput" placeholder="输入 JavaScript 代码" spellcheck="false"></textarea> <!-- 关闭拼写检查 -->
+        <button onclick="executeJS()">执行脚本</button>
+    </div>
+    <div class="white">
+        <iframe id="output" style="width: 100%; height: 100%; border: none;"></iframe>
+    </div>
+
+    <script>
+        function executeJS() {
+            const jsCode = document.getElementById('jsInput').value;
+            const iframe = document.getElementById('output');
+            const iframeContent = iframe.contentWindow || iframe.contentDocument;
+            iframeContent.document.open();
+            iframeContent.document.write(`
+                <!DOCTYPE html>
+                <html lang="zh">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>执行结果</title>
+                </head>
+                <body>
+                    <script>
+                        try {
+                            ${jsCode}
+                        } catch (e) {
+                            document.body.innerHTML = '<pre style="color: red;">' + e.message + '</pre>';
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            iframeContent.document.close();
+        }
+    </script>
+</body>
+</html>
