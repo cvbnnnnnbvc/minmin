@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>灵感板</title>
+    <style>
+        body {
+            display: flex;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #fileInput {
+            display: none;
+        }
+        .custom-file-upload {
+            border: 1px solid #007bff;
+            color: #007bff;
+            background-color: transparent;
+            padding: 8px 17px;
+            cursor: pointer;
+            border-radius: 20px;
+            margin-right: 15px;
+        }
+        #left-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: rgb(255, 255, 255);
+            margin-left: 200px;
+            padding: 20px;
+        }
+        #container {
+            border: 1px solid #ccc;
+            background-color: white;
+        }
+        #add-text {
+            padding: 8px 17px;
+            background-color: #a1acc9;
+            border: none;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        #download {
+            margin-top: 20px;
+            padding: 8px 17px;
+            background-color: #5263a7;
+            border: none;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        #layer-controls-container {
+            overflow-y: auto;
+            height: calc(100vh - 20px); 
+            padding: 10px;
+            border-left: 1px solid #ccc;
+            background-color: #e8e8e8;
+            position: absolute;
+            right: 0px; 
+            width: 300px;
+        }
+        #layer-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .layer-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
+        .layer-item button {
+            margin-left: 10px;
+        }
+        .layer-preview {
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+        }
+        input:focus {
+            border-color: #66afe9;
+            outline: 0;
+            -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(102, 175, 233, .6);
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(102, 175, 233, .6);
+        }
+        input[type="text"] {
+            width: 200px;
+            max-width: 600px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+        }
+        button {
+            padding: 4px 8px;
+            background-color: #666666;
+            border: none;
+            color: white;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="left-panel">
+        <div id="controls">
+            <label for="fileInput" class="custom-file-upload">
+                添加图片
+            </label>
+            <input type="file" id="fileInput" multiple accept="image/*">
+            <input type="text" id="text-input" placeholder="输入文本">
+            <input type="color" id="color-picker" class="hidden">
+            <button id="add-text" class="hidden">添加文本</button>
+            <label><input type="checkbox" id="toggle-transformer" checked> 显示编辑点</label>
+        </div>
+        <div id="container"></div>
+        <button id="download">合成下载</button>
+    </div>
+    <div id="layer-controls-container">
+        <div id="layer-controls"></div>
+    </div>
+
+    <script src="konva.min.js"></script>
+    <script>
+       const fileInput = document.getElementById('fileInput');
+const width = 800;
+const height = 600;
+const stage = new Konva.Stage({
+    container: 'container',
+    width: width,
+    height: height,
+});
+
+const layer = new Konva.Layer();
+stage.add(layer);
+
+const transformerLayer = new Konva.Layer();
+stage.add(transformerLayer);
+
+const layerControls = document.getElementById('layer-controls');
+
+function addImage(imageObj) {
+    const image = new Konva.Image({
+        image: imageObj,
+        x: stage.width() / 2,
+        y: stage.height() / 2,
+        draggable: true,
+    });
+    image.offsetX(imageObj.width / 2);
+    image.offsetY(imageObj.height / 2);
+    layer.add(image);
+    layer.draw();
+    addTransformer(image);
+    addLayerControl(image);
+}
+
+function addText() {
+    const text = new Konva.Text({
+        text: document.getElementById('text-input').value,
+        x: stage.width() / 2,
+        y: stage.height() / 2,
+        fontSize: 20,
+        draggable: true,
+        fill: document.getElementById('color-picker').value
+    });
+    text.offsetX(text.width() / 2);
+    text.offsetY(text.height() / 2);
+    layer.add(text);
+    layer.draw();
+    addTransformer(text);
+    addLayerControl(text);
+}
+
+function addTransformer(node) {
+    const tr = new Konva.Transformer({
+        node,
+        rotateEnabled: true,
+        keepRatio: true,
+        centeredScaling: true,
+        flipEnabled: false,
+        enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
+        visible: document.getElementById('toggle-transformer').checked,
+    });
+    transformerLayer.add(tr);
+    transformerLayer.batchDraw();
+}
+
+document.getElementById('fileInput').addEventListener('change', function (event) {
+    const files = event.target.files;
+    Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            const imageObj = new Image();
+            imageObj.onload = function() {
+                addImage(imageObj);
+            };
+            imageObj.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+});
+
+document.getElementById('add-text').addEventListener('click', addText);
+
+document.getElementById('text-input').addEventListener('input', function () {
+    const addButton = document.getElementById('add-text');
+    const colorPicker = document.getElementById('color-picker');
+    if (this.value.trim() !== '') {
+        addButton.classList.remove('hidden');
+        colorPicker.classList.remove('hidden');
+    } else {
+        addButton.classList.add('hidden');
+        colorPicker.classList.add('hidden');
+    }
+});
+
+document.getElementById('toggle-transformer').addEventListener('change', function () {
+    transformerLayer.visible(this.checked);
+    transformerLayer.batchDraw();
+});
+
+document.getElementById('download').addEventListener('click', function () {
+    transformerLayer.hide();
+    transformerLayer.batchDraw();
+
+    const dataURL = stage.toDataURL({ pixelRatio: 3 });
+    const link = document.createElement('a');
+    link.download = '合成图像.png';
+    link.href = dataURL;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    transformerLayer.show();
+    transformerLayer.batchDraw();
+});
+
+function addLayerControl(node) {
+    const layerItem = document.createElement('div');
+    layerItem.className = 'layer-item';
+
+    const preview = document.createElement('canvas');
+    preview.className = 'layer-preview';
+    preview.width = 50;
+    preview.height = 50;
+    updateLayerPreview(node, preview);
+    layerItem.appendChild(preview);
+
+    const label = document.createElement('span');
+    label.innerText = `图 ${layerControls.children.length + 1}`;
+    layerItem.appendChild(label);
+
+    const upButton = document.createElement('button');
+    upButton.innerText = '向内';
+    upButton.addEventListener('click', function () {
+        const index = Array.from(layerControls.children).indexOf(layerItem);
+        if (index > 0) {
+            const prevNode = layerControls.children[index - 1].konvaNode;
+            prevNode.moveUp();
+            layer.draw();
+            updateLayerControls();
+        }
+    });
+    layerItem.appendChild(upButton);
+
+    const downButton = document.createElement('button');
+    downButton.innerText = '向外';
+    downButton.addEventListener('click', function () {
+        const index = Array.from(layerControls.children).indexOf(layerItem);
+        if (index < layerControls.children.length - 1) {
+            const nextNode = layerControls.children[index + 1].konvaNode;
+            nextNode.moveDown();
+            layer.draw();
+            updateLayerControls();
+        }
+    });
+    layerItem.appendChild(downButton);
+
+    const deleteButton = document.createElement('button');
+    deleteButton.innerText = '删除';
+    deleteButton.addEventListener('click', function () {
+        const tr = transformerLayer.find('Transformer').find(t => t.nodes()[0] === node);
+        if (tr) {
+            tr.destroy();
+        }
+        node.destroy();
+        layer.draw();
+        updateLayerControls();
+    });
+    layerItem.appendChild(deleteButton);
+
+    layerItem.konvaNode = node;
+    layerControls.appendChild(layerItem);
+}
+
+function updateLayerControls() {
+    while (layerControls.firstChild) {
+        layerControls.removeChild(layerControls.firstChild);
+    }
+    Array.from(layer.children).forEach(node => {
+        if (node.getClassName() !== 'Transformer') {
+            addLayerControl(node);
+        }
+    });
+}
+
+function updateLayerPreview(node, preview) {
+    const scale = Math.min(preview.width / node.width(), preview.height / node.height());
+    const context = preview.getContext('2d');
+    context.clearRect(0, 0, preview.width, preview.height);
+    context.save();
+    context.scale(scale, scale);
+    context.translate(node.width() / 2, node.height() / 2);
+    node.toImage({
+        callback: function(img) {
+            context.drawImage(img, -node.width() / 2, -node.height() / 2);
+            context.restore();
+        }
+    });
+}
+
+stage.on('wheel', function (e) {
+    e.evt.preventDefault();
+    const oldScale = stage.scaleX();
+    const pointer = stage.getPointerPosition();
+
+    const mousePointTo = {
+        x: (pointer.x - stage.x()) / oldScale,
+        y: (pointer.y - stage.y()) / oldScale,
+    };
+
+    let direction = e.evt.deltaY > 0 ? -1 : 1;
+    if (e.evt.deltaMode === 1) {
+        direction *= 0.05;
+    } else if (e.evt.deltaMode === 2) {
+        direction *= 0.002;
+    } else {
+        direction *= 0.001;
+    }
+    const newScale = direction > 0 ? oldScale * (1 + direction) : oldScale / (1 - direction);
+
+    stage.scale({ x: newScale, y: newScale });
+
+    const newPos = {
+        x: pointer.x - mousePointTo.x * newScale,
+        y: pointer.y - mousePointTo.y * newScale,
+    };
+
+    stage.position(newPos);
+    stage.batchDraw();
+});
+
+let lastDist = 0;
+stage.on('touchmove', function (e) {
+    e.evt.preventDefault();
+    const touch1 = e.evt.touches[0];
+    const touch2 = e.evt.touches[1];
+
+    if (touch1 && touch2) {
+        const dist = Math.sqrt(
+            Math.pow(touch2.clientX - touch1.clientX, 2) + Math.pow(touch2.clientY - touch1.clientY, 2)
+        );
+
+        if (!lastDist) {
+            lastDist = dist;
+        }
+
+        const scale = stage.scaleX() * (dist / lastDist);
+
+        stage.scaleX(scale);
+        stage.scaleY(scale);
+        stage.batchDraw();
+        lastDist = dist;
+    }
+});
+
+stage.on('touchend', function () {
+    lastDist = 0;
+});
+
+    </script>
+</body>
+</html>
