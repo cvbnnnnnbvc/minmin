@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>思维导图 制作</title>
+  <script src="go.js"></script>
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Arial', sans-serif;
+      background-color: #f0f0f0;
+    }
+    #myDiagramDiv {
+      width: 100%;
+      height: 90%;
+      border: 1px solid #ccc;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      background-color: #fff;
+    }
+    #controls {
+      width: 100%;
+      height: 10%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #ebebeb;
+      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+      padding: 10px 0;
+      position: relative;
+    }
+    button, input[type="color"] {
+      margin: 0 6px;
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 50%;
+      background-color: #f9f9f9;
+      cursor: pointer;
+      transition: background-color 0.3s, box-shadow 0.3s;
+    }
+    button:hover, input[type="color"]:hover {
+      background-color: #e9e9e9;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    button:active, input[type="color"]:active {
+      background-color: #d9d9d9;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) inset;
+    }
+    input[type="color"] {
+      padding: 0;
+      border: none;
+      width: 40px;
+      height: 40px;
+    }
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+    input[type="color"]::-webkit-color-swatch {
+      border: none;
+      border-radius: 5px;
+    }
+    label {
+      margin: 0 10px;
+      font-weight: bold;
+    }
+    #exportMenu {
+      display: none;
+      position: absolute;
+      bottom: 60px;
+      background-color: #919191;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 10px;
+      border-radius: 5px;
+      z-index: 10;
+    }
+    #exportMenu button {
+      margin: 5px 0;
+      width: 100%;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="myDiagramDiv"></div>
+  <div id="controls">
+    <button id="importButton">导入</button>
+    <button id="addButton">增加</button>
+    <button id="removeButton">删除</button>
+    <input type="color" id="nodeColor" value="#ADD8E6"> <!-- 默认蓝色 -->
+    <input type="color" id="textColor" value="#FFFFFF"> <!-- 默认白色 -->
+    <button id="updateButton">换色</button>
+    <button id="exportButton">导出</button>
+    <div id="exportMenu">
+      <button id="exportData">导出数据（JSON）</button>
+      <button id="exportImage">储存为图片（PNG）</button>
+    </div>
+  </div>
+  <script>
+    function init() {
+      var $ = go.GraphObject.make;  // 缩短 go.GraphObject.make 的写法
+
+      var myDiagram =
+        $(go.Diagram, "myDiagramDiv",  // 图表将会显示在此 DIV 元素中
+          {
+            initialContentAlignment: go.Spot.Center,  // 初始对齐方式
+            "undoManager.isEnabled": true,  // 启用撤销管理器
+            layout: $(go.TreeLayout, {  // 使用树状布局
+              angle: 90,
+              layerSpacing: 35
+            })
+          });
+
+      // 定义节点模板
+      myDiagram.nodeTemplate =
+        $(go.Node, "Auto",
+          {
+            selectionAdornmentTemplate:
+              $(go.Adornment, "Auto",
+                $(go.Shape, { fill: null, stroke: "dodgerblue", strokeWidth: 2 }),
+                $(go.Placeholder)
+              ),
+            contextMenu:     // 定义每个节点的上下文菜单
+              $("ContextMenu",  // 仅有一个按钮
+                $("ContextMenuButton",
+                  $(go.TextBlock, "删除节点"),
+                  { click: function(e, obj) { removeNodeAndChildren(obj.part.adornedPart); } })
+              )
+          },
+          $(go.Shape, "RoundedRectangle",
+            { strokeWidth: 0 },
+            new go.Binding("fill", "color")),
+          $(go.TextBlock, "Default Text",
+            { margin: 8, editable: true, stroke: "white", name: "TEXTBLOCK" },
+            new go.Binding("text", "key"),
+            new go.Binding("stroke", "textColor")) // 绑定文字颜色
+        );
+
+      // 定义连线模板
+      myDiagram.linkTemplate =
+        $(go.Link,
+          $(go.Shape),
+          $(go.Shape, { toArrow: "OpenTriangle" })
+        );
+
+      // 创建图表模型数据，只包含“中心主题”
+      myDiagram.model = new go.GraphLinksModel(
+        [
+          { key: "中心主题", color: "lightblue", textColor: "white" } // 设置默认文字颜色
+        ],
+        []
+      );
+
+      // 递归删除节点及其子节点
+      function removeNodeAndChildren(node) {
+        var diagram = node.diagram;
+        diagram.startTransaction("remove node and children");
+        diagram.removeParts(node.findTreeParts());
+        diagram.commitTransaction("remove node and children");
+      }
+
+      // 添加分支
+      document.getElementById('addButton').addEventListener('click', function() {
+        var selectedNode = myDiagram.selection.first();
+        if (selectedNode !== null) {
+          var newNodeData = {
+            key: "新分支",
+            color: document.getElementById('nodeColor').value, // 使用当前节点颜色选择框的值
+            textColor: document.getElementById('textColor').value // 使用当前文字颜色选择框的值
+          };
+          myDiagram.model.addNodeData(newNodeData);
+          myDiagram.model.addLinkData({ from: selectedNode.data.key, to: newNodeData.key });
+        } else {
+          alert('请选中一个节点!');
+        }
+      });
+
+      // 删除分支
+      document.getElementById('removeButton').addEventListener('click', function() {
+        var selectedNode = myDiagram.selection.first();
+        if (selectedNode !== null && selectedNode.data.key !== "中心主题") {
+          removeNodeAndChildren(selectedNode);
+        } else {
+          alert('请选中一个节点来删除分支，中心主题节点不能删除');
+        }
+      });
+
+      // 更新节点颜色和文字颜色
+      document.getElementById('updateButton').addEventListener('click', function() {
+        var selectedNode = myDiagram.selection.first();
+        if (selectedNode !== null) {
+          var nodeColor = document.getElementById('nodeColor').value;
+          var textColor = document.getElementById('textColor').value;
+          myDiagram.startTransaction('update node');
+          myDiagram.model.setDataProperty(selectedNode.data, 'color', nodeColor);
+          myDiagram.model.setDataProperty(selectedNode.data, 'textColor', textColor);
+          myDiagram.commitTransaction('update node');
+        } else {
+          alert('请选中一个节点来更新');
+        }
+      });
+
+      // 导出菜单显示隐藏
+      document.getElementById('exportButton').addEventListener('click', function() {
+        var exportMenu = document.getElementById('exportMenu');
+        if (exportMenu.style.display === 'none' || exportMenu.style.display === '') {
+          exportMenu.style.display = 'block';
+        } else {
+          exportMenu.style.display = 'none';
+        }
+      });
+
+      // 导出为图片
+      document.getElementById('exportImage').addEventListener('click', function() {
+        exportDiagramAsImage();
+        document.getElementById('exportMenu').style.display = 'none';
+      });
+
+      function exportDiagramAsImage() {
+        var img = myDiagram.makeImage({
+          scale: 2, // 增加缩放比例以提高分辨率
+          background: "white"
+        });
+        var link = document.createElement('a');
+        link.href = img.src;
+        link.download = '思维导图.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      // 导出为数据
+      document.getElementById('exportData').addEventListener('click', function() {
+        var jsonData = myDiagram.model.toJson();
+        var blob = new Blob([jsonData], { type: 'application/json' });
+        var link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = '思维导图.json';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        document.getElementById('exportMenu').style.display = 'none';
+      });
+
+      // 导入数据
+      document.getElementById('importButton').addEventListener('click', function() {
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = function(event) {
+          var file = event.target.files[0];
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            var jsonData = e.target.result;
+            loadDiagramFromJson(jsonData);
+          };
+          reader.readAsText(file);
+        };
+        input.click();
+      });
+
+      // 根据JSON数据加载思维导图
+      function loadDiagramFromJson(jsonData) {
+        myDiagram.model = go.Model.fromJson(jsonData);
+      }
+
+      // 监听点击事件，点击上拉菜单以外的区域时隐藏菜单
+      document.addEventListener('click', function(event) {
+        var exportMenu = document.getElementById('exportMenu');
+        var exportButton = document.getElementById('exportButton');
+        if (exportMenu.style.display === 'block' && !exportMenu.contains(event.target) && event.target !== exportButton) {
+          exportMenu.style.display = 'none';
+        }
+      });
+
+    }
+
+    // 初始化思维导图
+    init();
+  </script>
+</body>
+</html>
