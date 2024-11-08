@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>锁定信息</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div id="popup" class="popup">
+        <h2>🕓锁定中..</h2>
+        <label for="inputKey">请输入动态的时间密钥：</label>
+        <input type="text" id="inputKey" required>
+        <button onclick="validateKey()">解锁页面</button>
+    </div>
+
+    <div id="content" class="content" style="display: none;">
+        <p id="secretContent"></p>
+    </div>
+</body>
+</html>
