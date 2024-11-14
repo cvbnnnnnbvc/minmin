@@ -1,0 +1,129 @@
+body {
+    display: flex;
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh; 
+    margin: 0; 
+    background: linear-gradient(135deg, #1f2c3b, #2c3e50); 
+    font-family: 'Roboto', sans-serif; 
+    user-select: none; 
+}
+
+.container {
+    width: 90%; 
+    max-width: 850px; 
+    margin: 0 auto; 
+    padding: 40px 30px; 
+    text-align: center;
+    background-color: rgba(44, 62, 80, 0.95); 
+    border-radius: 20px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2); 
+    backdrop-filter: blur(15px); 
+    transition: all 0.3s ease-in-out; 
+}
+
+h1 {
+    font-size: 2.8em;
+    font-weight: 700;
+    color: #81c1ef; 
+    letter-spacing: 2px; 
+    margin-bottom: 30px;
+}
+
+/* 问题文本 */
+.question {
+    color: #ffffff;
+    font-size: 25px;
+    margin-bottom: 20px;
+}
+
+/* 选项容器 */
+.options {
+    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* 选项样式 */
+.option {
+    padding: 15px;
+    border-radius: 12px;
+    background: #34495e; 
+    color: #ecf0f1;
+    font-size: 1.5em;
+    font-weight: 500;
+    border: 2px solid #7f8c8d;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); 
+}
+
+.option:hover {
+    background: #7f8c8d; 
+    border-color: #81c1ef; 
+    color: #81c1ef; 
+    transform: translateY(-4px); /* 上浮效果 */
+}
+
+.option.selected {
+    background: #81c1ef; 
+    color: #ffffff; 
+    border-color: #4c73f0; 
+    transform: translateY(-6px); /* 上浮效果 */
+}
+
+.option:active {
+    transform: translateY(3px); /* 点击时下移效果 */
+}
+
+.button {
+    padding: 12px 28px;
+    background: linear-gradient(45deg, #2980b9, #8e44ad); 
+    color: white;
+    font-size: 1.2em;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2); 
+    font-weight: 600;
+    margin-top: 20px;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+
+.button:hover {
+    background: linear-gradient(45deg, #8e44ad, #2980b9); 
+    transform: scale(1.05);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3); 
+}
+
+.button:active {
+    background: linear-gradient(45deg, #2c3e50, #8e44ad); 
+    transform: scale(1);
+}
+
+.button:focus {
+    outline: none;
+}
+
+
+/* 测试结果弹窗 */
+#resultModal {
+    color: #ffffff;
+    font-size: 30px;
+    display: none;
+    width: 90%;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    text-align: center;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+#pieChart {
+    margin: 20px 0;
+}
