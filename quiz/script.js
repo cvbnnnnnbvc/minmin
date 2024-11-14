@@ -97,7 +97,7 @@ function loadPieChart() {
                     position: 'top',
                     labels: {
                         font: {
-                            size: 30 // 设置标签的字体大小为 30px
+                            size: 15 // 设置标签的字体大小为 30px
                         },
                         color: 'white' // 设置文字颜色为白色
                     }
