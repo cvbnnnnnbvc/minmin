@@ -1,6 +1,6 @@
 // 问题数据
 const questions = [
-    { "question": "1. N.AA…（A循环）=A/ZN.ABAB…（AB循环）=AB/ZZN.ABCABC…（ABC循环）=ABC/ZZZ……请问：N.ZZZZZZ……（Z循环）=？", "options": ["A. A", "B. B", "C. N", "D. Z"] },
+    { "question": "1. N.AA…（A循环）=A/Z，N.ABAB…（AB循环）=AB/ZZ，N.ABCABC…（ABC循环）=ABC/ZZZ……请问：N.ZZZZZZ……（Z循环）=？", "options": ["A. A", "B. B", "C. N", "D. Z"] },
     { "question": "2. a^n-a^（n-1）=（a-1）a^（n-1），a^n-a^（n-2）=（a-1）［a^（n-2）+a^（n-1）］，a^n-a^（n-3）=（a-1）［a^（n-3）+a^（n-2）+a^（n-1）］，a^n-a^（n-4）=（a-1）［a^（n-4）+a^（n-3）+a^（n-2）+a^（n-1）］，a^n-a^（n-5）=（a-1）［a^（n-5）+a^（n-4）+a^（n-3）+a^（n-2）+a^（n-1）］……请问an=？", "options": ["A. a^2+2an+n^2", "B. a^n", "C. .a^5+a^4+a^3+a^2+a", "D. a/n"] },
     { "question": "3. 当N=Z时，在由A开头，Z结尾的正方形字母着去掉H、L、O、S后得到什么？", "options": ["A. N-Z", "B. 口", "C. N+Z", "D. X"] },
     { "question": "4. 两张对折的长纸条上分别并排写着26个字母，“^”代表着被对折过的地方：纸条一：ABCDEFG^HIJKLMN，纸条二：OPQRST^UVWXYZ，请问XVA是什么？", "options": ["A. LIO", "B. RPH", "C. QSN", "D. QVQ"] },
