@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>门萨智商测试 (IQ Test From Mensa)</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="timer"></div>
+
+<div class="container" id="welcomeScreen">
+    <p class="texttop">门萨智商测试</p>
+    <p>IQ Test From Mensa</p>
+    <hr class="custom-hr">
+    <p class="text">这项测试可以用来测试一个人的认知能力水平，以IQ分值的形式划分等级，分值范围在85分至145分之间，100分是正常人的常见分值。</p>
+    <p class="text">为了确保获得更准确的评分，请选择一个通风良好，不受限制，没有打扰，能专心持续答题25分钟的空间。</p>
+    <button onclick="showAgeScreen()" class="start conduct">开始测试</button>
+</div>
+<div class="footer">
+    &copy; 1997-2024 国际标准测试 IQ Test From Mensa.
+</div>
+
+<div class="container" id="ageScreen" style="display: none;">
+    <p class="age">开始测试前请选择自己的年龄范围</p>
+    <div id="ageOptions">
+        <label><input type="radio" name="age" value="10-19"> 10-19 岁</label>
+        <label><input type="radio" name="age" value="20-29"> 20-29 岁</label>
+        <label><input type="radio" name="age" value="30-39"> 30-60 岁</label>
+        <label><input type="radio" name="age" value="40+"> 61 岁以上</label>
+    </div>
+    <button onclick="startQuiz()" class="start">测试</button>
+</div>
+
+<div class="container" id="questionScreen" style="display: none;">
+    <div id="progressBarContainer">
+        <div id="progressBar"></div>
+    </div>
+    <h2 id="questionText"></h2>
+    <div id="answersContainer"></div>
+    <button id="nextButton" onclick="nextQuestion()">下一题&nbsp;&nbsp;&gt;</button>
+</div>
+
+
+<div class="container" id="resultScreen" style="display: none;">
+    <h2>测试完成！</h2>
+    <p id="resultText"></p>
+    <table class="normal-distribution">
+        <thead>
+            <tr>
+                <th>IQ范围</th>
+                <th>描述</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>130+</td>
+                <td>天才或接近天才</td>
+            </tr>
+            <tr>
+                <td>120-129</td>
+                <td>非常优秀</td>
+            </tr>
+            <tr>
+                <td>110-119</td>
+                <td>优秀</td>
+            </tr>
+            <tr>
+                <td>90-109</td>
+                <td>平均水平</td>
+            </tr>
+            <tr>
+                <td>80-89</td>
+                <td>稍低于平均水平</td>
+            </tr>
+            <tr>
+                <td>70-79</td>
+                <td>低于平均水平</td>
+            </tr>
+            <tr>
+                <td>69以下</td>
+                <td>智力障碍</td>
+            </tr>
+        </tbody>
+    </table>
+    <p id="distributionText"></p>
+    <p id="totalTimeText" class="highlight"></p> 
+</div>
+
+
+<script src="script.js"></script>
+</body>
+</html>
