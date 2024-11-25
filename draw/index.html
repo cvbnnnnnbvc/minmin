@@ -1,0 +1,299 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>敏敏世界</title>
+      <!-- 引入 Spectrum Color Picker 样式文件 -->
+      <link rel="stylesheet" type="text/css" href="spectrum.min.css">
+      <!-- 引入 jQuery -->
+      <script src="jquery-3.6.0.min.js"></script>
+      <!-- 引入 Spectrum Color Picker 脚本文件 -->
+      <script src="spectrum.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: rgb(47, 47, 47);
+            color: rgb(47, 47, 47);
+        }
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+       h1, h4 {
+	color: rgb(250, 250, 250);
+           }	
+
+        #myCanvas {
+            background-color:rgb(179, 179, 179);
+            width: 400px;
+            height: 400px;
+            object-fit: cover;
+        }
+        #box {
+            background-color: rgb(255, 255, 255);
+            margin-top: 10px; 
+            border-radius: 3px;
+            padding: 10px 20px;
+            color: #000;
+        }
+        #brushSizeValue {
+            margin-left: 60%;
+            color: #8f8f8f;
+        }
+        canvas {
+            border: 1px solid #000;
+        }
+        input {
+            margin: 5px;
+        }
+        #downloadButton {
+            background-color: rgb(78, 170, 165);
+            border: 1px solid rgb(78, 170, 165);
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            color: #ffffff;
+            margin-top: 10px;
+            margin-left: 25px;
+        }
+        #undoButton {
+            background-color: rgb(83, 83, 83);
+            border: 1px solid rgb(83, 83, 83);
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            color: #ffffff;
+        }
+        #clearAllButton {
+            background-color: rgb(234, 234, 234);
+            border: 1px solid rgb(83, 83, 83);
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            color: rgb(83, 83, 83);
+        }
+        #reduce{
+            margin-left: 15px;
+        }
+        #Increase, #reduce {
+            font-weight: bold;
+            font-size: 15px;
+            border: 2px solid rgb(181, 181, 181);
+            color: rgb(101, 101, 101);
+            border-radius: 5px;
+        }
+        #imageInput::-webkit-file-upload-button {
+            visibility: hidden;
+        }
+        #imageInput::before {
+            content: '选择文件';
+            color: white;
+            display: inline-block;
+            background: #2b658c;
+            padding: 4px 8px;
+            border: 1px solid #2b658c;
+            border-radius: 3px;
+            cursor: pointer;
+            outline: none;
+            white-space: nowrap;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+	<h1>敏敏绘图板</h1>
+        <input type="file" id="imageInput" accept="image/*">
+        <canvas id="myCanvas" width="400" height="400"></canvas>
+        <div id="box">
+            <label for="colorPicker">画笔颜色:</label>
+            <input type="text" id="colorPicker" value="rgb(0, 0, 255)">
+            <br>
+            <label for="brushSize">画笔大小:</label>
+            <button onclick="decreaseBrushSize()" id="reduce">-</button>
+            <input type="range" id="brushSize" min="1" max="80" value="5">
+            <button onclick="increaseBrushSize()" id="Increase">+</button>
+            <div id="brushSizeValue">5px</div>
+            <input type="radio" name="tool" id="brushTool" checked>
+            <label for="brushTool">画笔</label>
+            <input type="radio" name="tool" id="eraserTool">
+            <label for="eraserTool">橡皮擦</label>
+            <br>
+            <button id="undoButton">撤销</button>
+            <button id="clearAllButton">清空</button>
+            <button id="downloadButton">下载图像</button>
+        </div>
+	    <h4>站长：敏敏</h4>
+    </div>
+    <script>
+        function decreaseBrushSize() {
+            if (parseInt(brushSize.value) > brushSize.min) {
+                brushSize.value = parseInt(brushSize.value) - 1;
+                brushSize.dispatchEvent(new Event('input'));
+            }
+        }
+    
+        function increaseBrushSize() {
+            if (parseInt(brushSize.value) < brushSize.max) {
+                brushSize.value = parseInt(brushSize.value) + 1;
+                brushSize.dispatchEvent(new Event('input'));
+            }
+        }
+    
+        document.addEventListener("DOMContentLoaded", function () {
+            const canvas = document.getElementById("myCanvas");
+            const context = canvas.getContext("2d", { willReadFrequently: true });
+            const colorPicker = document.getElementById("colorPicker");
+            const brushSize = document.getElementById("brushSize");
+            const brushSizeValue = document.getElementById("brushSizeValue");
+            const undoButton = document.getElementById("undoButton");
+            const downloadButton = document.getElementById("downloadButton");
+            const brushTool = document.getElementById("brushTool");
+            const eraserTool = document.getElementById("eraserTool");
+            const imageInput = document.getElementById("imageInput");
+            let painting = false;
+            let erasing = false;
+            let undoStack = [];
+    
+            function startPosition(e) {
+                painting = true;
+                if (e.type === "touchstart") {
+                    draw(e.touches[0]);
+                } else {
+                    draw(e);
+                }
+            }
+    
+            function endPosition() {
+                painting = false;
+                context.beginPath();
+                saveState();
+            }
+    
+            function handleTouchMove(e) {
+                e.preventDefault();
+                const touches = e.changedTouches;
+                for (let i = 0; i < touches.length; i++) {
+                    draw(touches[i]);
+                }
+            }
+    
+            function draw(touch) {
+                if (!painting) return;
+                context.lineWidth = brushSize.value;
+                context.lineCap = "round";
+                if (erasing) {
+                    context.globalCompositeOperation = "destination-out";
+                } else {
+                    context.globalCompositeOperation = "source-over";
+                    context.strokeStyle = colorPicker.value;
+                }
+                context.lineTo(touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
+                context.stroke();
+                context.beginPath();
+                context.moveTo(touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
+            }
+    
+            function saveState() {
+                undoStack.push(context.getImageData(0, 0, canvas.width, canvas.height));
+            }
+    
+            function undo() {
+                if (undoStack.length > 1) {
+                    undoStack.pop();
+                    context.putImageData(undoStack[undoStack.length - 1], 0, 0);
+                } else {
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+                    undoStack = [];
+                }
+            }
+    
+            function handleImageUpload(e) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = function () {
+                        context.clearRect(0, 0, canvas.width, canvas.height);
+                        undoStack = [];
+                        context.globalCompositeOperation = "source-over";
+                        const aspectRatio = img.width / img.height;
+                        const newHeight = canvas.width / aspectRatio;
+                        const newWidth = canvas.height * aspectRatio;
+                        const maxWidthOrHeight = Math.max(canvas.width, canvas.height);
+                        const finalWidth = maxWidthOrHeight;
+                        const finalHeight = maxWidthOrHeight / aspectRatio;
+                        if (aspectRatio > 1) {
+                            const x = (canvas.width - finalWidth) / 2;
+                            const y = (canvas.height - finalHeight) / 2;
+                            context.drawImage(img, x, y, finalWidth, finalHeight);
+                        } else {
+                            const maxHeight = Math.min(canvas.height, newHeight);
+                            const finalWidthForPortrait = maxHeight * aspectRatio;
+                            const xForPortrait = (canvas.width - finalWidthForPortrait) / 2;
+                            context.drawImage(img, xForPortrait, 0, finalWidthForPortrait, maxHeight);
+                        }
+                        saveState();
+                    };
+                };
+                reader.readAsDataURL(e.target.files[0]);
+                document.getElementById("imageInput").value = "";
+            }
+    
+            function downloadImage() {
+                const dataUrl = canvas.toDataURL("image/png");
+                const link = document.createElement("a");
+                link.href = dataUrl;
+                link.download = "canvas_image.png";
+                link.click();
+            }
+    
+            function toggleEraser() {
+                erasing = !erasing;
+            }
+    
+            brushSize.addEventListener("input", function () {
+                brushSizeValue.textContent = `${brushSize.value}px`;
+            });
+    
+            undoButton.addEventListener("click", undo);
+            downloadButton.addEventListener("click", downloadImage);
+            brushTool.addEventListener("change", function () {
+                erasing = false;
+            });
+            eraserTool.addEventListener("change", toggleEraser);
+            imageInput.addEventListener("change", handleImageUpload);
+    
+            canvas.addEventListener("mousedown", startPosition);
+            canvas.addEventListener("touchstart", startPosition);
+            canvas.addEventListener("mouseup", endPosition);
+            canvas.addEventListener("touchend", endPosition);
+            canvas.addEventListener("mousemove", draw);
+            canvas.addEventListener("touchmove", handleTouchMove);
+    
+            saveState();
+    
+            const clearAllButton = document.getElementById("clearAllButton");
+            function clearAll() {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                undoStack = [];
+            }
+            clearAllButton.addEventListener("click", clearAll);
+        });
+         // 使用 Spectrum Color Picker
+         $("#colorPicker").spectrum({
+            preferredFormat: "rgb",
+            showInput: true,
+            showPalette: true,
+            palette: [["rgb(255, 0, 0)", "rgb(0, 255, 0)", "rgb(0, 0, 255)"]],
+        });
+    </script>
+</body>
+</html>
