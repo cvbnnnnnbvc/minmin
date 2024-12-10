@@ -1,319 +1,337 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>像素画SVG生成器</title>
+    <title>网址簿</title>
     <style>
         body {
-            display: flex;
-            justify-content: center;
             font-family: Arial, sans-serif;
-            background: linear-gradient(to right, rgb(93, 121, 164), rgb(32, 209, 229));
             margin: 0;
             padding: 0;
-            height: 100vh;
+            background-color: #f4f4f4;
         }
-
-        #container {
-            display: flex;
-            gap: 20px;
-            margin-top: 20px;
-            margin-left: -50px;
+        header {
+            background-color: #333;
+            color: white;
+            padding: 1em;
+            text-align: center;
         }
-
-        #canvas {
-            margin-top: 20px;
-            display: grid;
-            width: 500px;
+        .container {
+            width: 80%;
+            margin: 20px auto;
         }
-
-        .pixel {
-            width: 10px;
-            height: 10px;
-            background-color: #fff;
-            cursor: pointer;
-        }
-
-        #controls {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        #sidebar {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-            width: 150px;
-            margin-right: 20px;
-            margin-top: 50px;
-        }
-
-        #rgbList {
-            margin-top: 10px;
-            max-width: 100%;
-        }
-
-        .rgb-item {
-            display: flex;
-            align-items: center;
-            padding: 5px;
-            background-color: #f0f0f0;
-            margin-bottom: 5px;
-            cursor: pointer;
+        table {
             width: 100%;
+            border-collapse: collapse;
         }
-
-        .color-box {
-            width: 20px;
-            height: 20px;
-            margin-right: 10px;
-            border: 1px solid #333;
+        table, th, td {
+            border: 1px solid #ddd;
         }
-
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        form {
+            margin-bottom: 20px;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="text"], input[type="url"] {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
         button {
-            background: linear-gradient(to right, #352d7f, #23319a);
-            border-radius: 20px;      
-            display: flex;            
-            justify-content: center;   
-            align-items: center;       
-            color: white;      
-            border: none;     
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
-        button, input {
-            cursor: pointer
+        button:hover {
+            background-color: #757575;
         }
-        .remove-button {
-            background: linear-gradient(to right, #21c3a0, #485ae0);
-            margin-left: 10px;
+        .export-btn, .import-btn {
+            background-color: #007bff;
+            margin-top: 20px;
+        }
+        .import-btn {
+            background-color: #402d70;
+            margin-top: 20px;
+        }
+        .modify-btn {
+            background-color: #45a049;
+        }
+        .del-btn {
+            background-color: #f44336;
+        }
+        .cancel-btn {
+            background-color: #f44336;
+        }
+        .modify-form {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 9999; /* 确保浮动在页面最上层 */
+            width: 400px;
+        }
+        /* 隐藏文件选择框 */
+        #importFile {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div id="container">
-        <div>
-            <div id="controls">
-                <input type="color" id="colorPicker" value="#000000">
-                <button onclick="addColorRecord()">记录颜色</button>
-                <button onclick="pickColorMode()">取色</button>
-                <button onclick="undo()">返回上一步</button>
-                <button onclick="clearCanvas()">清空画布</button>
-                <button onclick="importSVG()">导入svg</button>
-                <button onclick="exportSVG()">下载图像</button>
-            </div>
-            <div id="canvas"></div>
-        </div>
-        <div id="sidebar">
-            <div id="rgbList"></div>
-        </div>
-    </div>
 
-    <!-- 弹窗 -->
-    <div id="popup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; border:1px solid #ccc; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,0.5);">
-        <textarea id="popupTextarea" rows="10" style="width:100%;"></textarea>
-        <div style="margin-top:10px; text-align:right;">
-            <button onclick="closePopup()">确认</button>
-        </div>
-    </div>
+<header>
+    <h1>网址簿</h1>
+</header>
 
-    <script>
-        const gridSize = 50;
-        const pixelSize = 10;
-        const maxHistorySteps = 10;
-        const maxColorRecords = 15;
-        const canvas = document.getElementById("canvas");
-        const colorPicker = document.getElementById("colorPicker");
-        const rgbList = document.getElementById("rgbList");
-        const popup = document.getElementById("popup");
-        const popupTextarea = document.getElementById("popupTextarea");
-        let history = [];
-        let colorRecords = [];
-        let isPickColorMode = false; // 是否处于取色模式
+<div class="container">
+    <form id="bookmarkForm">
+        <label for="title">网址标题:</label>
+        <input type="text" id="title" name="title" required>
+        <label for="url">网址:</label>
+        <input type="url" id="url" name="url" required>
+        <label for="description">描述:</label>
+        <input type="text" id="description" name="description">
+        <button type="submit">添加网址</button>
+    </form>
 
-        // 初始化画布
-        function initCanvas() {
-            canvas.style.gridTemplateColumns = `repeat(${gridSize}, ${pixelSize}px)`;
-            for (let i = 0; i < gridSize * gridSize; i++) {
-                const pixel = document.createElement("div");
-                pixel.classList.add("pixel");
-                pixel.addEventListener("click", () => {
-                    if (isPickColorMode) {
-                        // 如果是取色模式，直接获取颜色
-                        colorPicker.value = rgbToHex(pixel.style.backgroundColor);
-                        isPickColorMode = false; // 关闭取色模式
-                    } else {
-                        // 普通模式下设置像素颜色
-                        saveHistory();
-                        pixel.style.backgroundColor = colorPicker.value;
-                    }
+    <table>
+        <thead>
+            <tr>
+                <th>标题</th>
+                <th>网址</th>
+                <th>描述</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="bookmarkList">
+            <!-- 网站列表将显示在这里 -->
+        </tbody>
+    </table>
+
+    <button class="export-btn" id="exportBtn">导出 HTML</button>
+    <button class="import-btn" id="importBtn">导入 HTML</button>
+    <input type="file" id="importFile" class="import-btn">
+</div>
+
+<div class="modify-form" id="modifyForm">
+    <form id="updateForm">
+        <h3>修改网址</h3>
+        <label for="modifyTitle">网址标题:</label>
+        <input type="text" id="modifyTitle" name="modifyTitle" required>
+        <label for="modifyUrl">网址:</label>
+        <input type="url" id="modifyUrl" name="modifyUrl" required>
+        <label for="modifyDescription">描述:</label>
+        <input type="text" id="modifyDescription" name="modifyDescription">
+        <button type="submit">保存修改</button>
+        <button type="button" class="cancel-btn" id="cancelModify">取消</button>
+    </form>
+</div>
+
+<script>
+    // 获取 DOM 元素
+    const form = document.getElementById('bookmarkForm');
+    const bookmarkList = document.getElementById('bookmarkList');
+    const exportBtn = document.getElementById('exportBtn');
+    const importFile = document.getElementById('importFile');
+    const importBtn = document.getElementById('importBtn');
+    const modifyForm = document.getElementById('modifyForm');
+    const updateForm = document.getElementById('updateForm');
+    const cancelModify = document.getElementById('cancelModify');
+
+    // 存储网址簿数据
+    const bookmarks = JSON.parse(localStorage.getItem('bookmarks')) || [];
+
+    // 渲染网址簿列表
+    function renderBookmarks() {
+        bookmarkList.innerHTML = '';
+        bookmarks.forEach((bookmark, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${bookmark.title}</td>
+                <td><a href="${bookmark.url}" target="_blank">${bookmark.url}</a></td>
+                <td>${bookmark.description || '无描述'}</td>
+                <td>
+                    <button class="modify-btn" onclick="editBookmark(${index})">修改</button>
+                    <button class="del-btn" onclick="deleteBookmark(${index})">删除</button>
+                </td>
+            `;
+            bookmarkList.appendChild(row);
+        });
+    }
+
+    // 添加网址
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        const title = form.title.value;
+        const url = form.url.value;
+        const description = form.description.value;
+
+        // 检查是否已有相同网址
+        if (bookmarks.some(bookmark => bookmark.url === url)) {
+            alert('该网址已存在');
+            return;
+        }
+
+        const newBookmark = { title, url, description };
+        bookmarks.push(newBookmark);
+
+        // 保存到本地存储
+        localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+
+        // 重置表单并重新渲染列表
+        form.reset();
+        renderBookmarks();
+    });
+
+    // 删除网址
+    function deleteBookmark(index) {
+        bookmarks.splice(index, 1);
+        localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+        renderBookmarks();
+    }
+
+    // 编辑网址
+    function editBookmark(index) {
+        const bookmark = bookmarks[index];
+        document.getElementById('modifyTitle').value = bookmark.title;
+        document.getElementById('modifyUrl').value = bookmark.url;
+        document.getElementById('modifyDescription').value = bookmark.description || '';
+        
+        // 显示修改表单
+        modifyForm.style.display = 'block';
+
+        // 处理保存修改
+        updateForm.onsubmit = function(event) {
+            event.preventDefault();
+
+            // 更新数据
+            bookmark.title = document.getElementById('modifyTitle').value;
+            bookmark.url = document.getElementById('modifyUrl').value;
+            bookmark.description = document.getElementById('modifyDescription').value;
+
+            // 保存到本地存储
+            localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+
+            // 隐藏修改表单并重新渲染列表
+            modifyForm.style.display = 'none';
+            renderBookmarks();
+        };
+    }
+
+    // 取消修改
+    cancelModify.addEventListener('click', () => {
+        modifyForm.style.display = 'none';
+    });
+
+    // 导出为 HTML
+    exportBtn.addEventListener('click', () => {
+        let htmlContent = `
+            <html lang="zh">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>网址簿</title>
+                    <style>
+                        table { width: 100%; border-collapse: collapse; }
+                        table, th, td { border: 1px solid #ddd; }
+                        th, td { padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                    </style>
+                </head>
+                <body>
+                    <h1>网址簿</h1>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>标题</th>
+                                <th>网址</th>
+                                <th>描述</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+
+        bookmarks.forEach(bookmark => {
+            htmlContent += `
+                <tr>
+                    <td>${bookmark.title}</td>
+                    <td><a href="${bookmark.url}" target="_blank">${bookmark.url}</a></td>
+                    <td>${bookmark.description || '无描述'}</td>
+                </tr>
+            `;
+        });
+
+        htmlContent += `
+                        </tbody>
+                    </table>
+                </body>
+            </html>
+        `;
+
+        // 创建一个 Blob 对象
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = '网址簿.html';
+        link.click();
+    });
+
+    // 导入 HTML 文件
+    importBtn.addEventListener('click', () => {
+        importFile.click();
+    });
+
+    // 处理文件导入
+    importFile.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(e.target.result, 'text/html');
+                const rows = doc.querySelectorAll('table tbody tr');
+
+                rows.forEach(row => {
+                    const title = row.children[0].textContent;
+                    const url = row.children[1].textContent;
+                    const description = row.children[2] ? row.children[2].textContent : '';
+
+                    // 如果网址已存在，跳过
+                    if (bookmarks.some(bookmark => bookmark.url === url)) return;
+
+                    bookmarks.push({ title, url, description });
                 });
-                canvas.appendChild(pixel);
-            }
-        }
 
-        // RGB转Hex格式
-        function rgbToHex(rgb) {
-            if (!rgb) return "#ffffff";
-            const result = rgb.match(/\d+/g).map(Number).map((x) => x.toString(16).padStart(2, '0')).join('');
-            return `#${result}`;
-        }
-
-        // 开启取色模式
-        function pickColorMode() {
-            isPickColorMode = true;
-        }
-
-        // 保存当前状态到历史记录
-        function saveHistory() {
-            const currentColors = Array.from(document.querySelectorAll(".pixel")).map(pixel => pixel.style.backgroundColor);
-            history.push(currentColors);
-            if (history.length > maxHistorySteps) {
-                history.shift();
-            }
-        }
-
-        // 返回上一步
-        function undo() {
-            if (history.length === 0) return;
-            const previousColors = history.pop();
-            document.querySelectorAll(".pixel").forEach((pixel, index) => {
-                pixel.style.backgroundColor = previousColors[index] || "#fff";
-            });
-        }
-
-        // 清空画布并保存当前状态
-        function clearCanvas() {
-            saveHistory();
-            document.querySelectorAll(".pixel").forEach(pixel => {
-                pixel.style.backgroundColor = "#fff";
-            });
-        }
-
-        // 打开弹窗
-        function openPopup(content = "") {
-            popupTextarea.value = content;
-            popup.style.display = "block";
-        }
-
-        // 关闭弹窗
-        function closePopup() {
-            popup.style.display = "none";
-        }
-
-        function exportSVG() {
-    const svgNS = "http://www.w3.org/2000/svg";
-    const svgElem = document.createElementNS(svgNS, "svg");
-    svgElem.setAttribute("width", gridSize * pixelSize);
-    svgElem.setAttribute("height", gridSize * pixelSize);
-    svgElem.setAttribute("xmlns", svgNS);
-
-    document.querySelectorAll(".pixel").forEach((pixel, index) => {
-        const x = (index % gridSize) * pixelSize;
-        const y = Math.floor(index / gridSize) * pixelSize;
-        const color = pixel.style.backgroundColor || "#fff";
-        if (color !== "rgb(255, 255, 255)") {
-            const rect = document.createElementNS(svgNS, "rect");
-            rect.setAttribute("x", x);
-            rect.setAttribute("y", y);
-            rect.setAttribute("width", pixelSize);
-            rect.setAttribute("height", pixelSize);
-            rect.setAttribute("fill", color);
-            svgElem.appendChild(rect);
+                localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+                renderBookmarks();
+            };
+            reader.readAsText(file);
         }
     });
 
-    // 序列化 SVG 内容为字符串
-    const svgData = new XMLSerializer().serializeToString(svgElem);
+    // 初始化
+    renderBookmarks();
+</script>
 
-    // 创建 Blob 并生成下载链接
-    const blob = new Blob([svgData], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-
-    // 创建一个虚拟的 <a> 元素
-    const downloadLink = document.createElement("a");
-    downloadLink.href = url;
-    downloadLink.download = "pixel_art.svg"; // 设置文件名
-    downloadLink.style.display = "none";
-
-    // 触发下载
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-
-    // 清理临时链接
-    document.body.removeChild(downloadLink);
-    URL.revokeObjectURL(url);
-}
-
-
-        // 导入SVG
-        function importSVG() {
-            openPopup();
-            popupTextarea.addEventListener("change", () => {
-                const svgData = popupTextarea.value;
-                const parser = new DOMParser();
-                const svgDoc = parser.parseFromString(svgData, "image/svg+xml");
-                const rects = svgDoc.querySelectorAll("rect");
-
-                clearCanvas();
-                rects.forEach(rect => {
-                    const x = parseInt(rect.getAttribute("x")) / pixelSize;
-                    const y = parseInt(rect.getAttribute("y")) / pixelSize;
-                    const color = rect.getAttribute("fill");
-                    const pixelIndex = y * gridSize + x;
-                    const pixel = canvas.children[pixelIndex];
-                    pixel.style.backgroundColor = color;
-                });
-
-                closePopup();
-            });
-        }
-
-        // 记录当前RGB颜色
-        function addColorRecord() {
-            const color = colorPicker.value;
-            if (colorRecords.length >= maxColorRecords) {
-                alert(`最多只能记录 ${maxColorRecords} 个颜色`);
-                return;
-            }
-            colorRecords.push(color);
-            updateColorList();
-        }
-
- // 更新RGB颜色记录列表
- function updateColorList() {
-            rgbList.innerHTML = "";
-            colorRecords.forEach((color, index) => {
-                const rgbItem = document.createElement("div");
-                rgbItem.className = "rgb-item";
-                
-                const colorBox = document.createElement("div");
-                colorBox.className = "color-box";
-                colorBox.style.backgroundColor = color;
-                rgbItem.appendChild(colorBox);
-
-                const colorText = document.createTextNode(color);
-                rgbItem.appendChild(colorText);
-
-                const removeButton = document.createElement("button");
-                removeButton.className = "remove-button";
-                removeButton.textContent = "移除";
-                removeButton.onclick = () => {
-                    colorRecords.splice(index, 1);
-                    updateColorList();
-                };
-
-                rgbItem.appendChild(removeButton);
-                rgbItem.onclick = () => {
-                    colorPicker.value = color;
-                };
-                
-                rgbList.appendChild(rgbItem);
-            });
-        }
-
-        initCanvas();
-    </script>
 </body>
 </html>
