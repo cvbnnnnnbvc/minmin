@@ -1,0 +1,12 @@
+{
+  "name": "First Scene (Klondike solitaire)",
+  "short_name": "First Scene (Klondike solitaire)",
+  "id": "com.example.klondike",
+  "description": "This is a game example to show how to use an Object Stack extension to make card games with GDevelop.\n\n\nThe assets come from Kenney.nl",
+  "orientation": "landscape",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "black",
+  "categories": ["games", "entertainment"],
+  "icons": []
+}
